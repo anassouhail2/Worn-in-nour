@@ -110,7 +110,7 @@
       aspect-ratio: 4/5; position: relative; overflow: hidden;
       background: #f2ebe2; display: flex; align-items: center; justify-content: center;
     }
-    .detail-img img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+    .detail-img img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; transition: opacity .25s ease; }
     .detail-img .ph-label { bottom: 26px; font-size: 11px; }
 
     .detail-body { padding: 40px 36px; display: flex; flex-direction: column; }
@@ -325,11 +325,10 @@
   const WHATSAPP = "212660417545";
 
   // ===== PRODUCT DATA =====
-  // For each product, specify the image filename.
-  // Upload your images to the same folder as this HTML file with these names:
-  //   - lueur.jpg
-  //   - aube.jpg
-  //   - voile.jpg
+  // For each product, specify an image filename.
+  // Upload images to the same folder as this HTML file (an "images" folder) with these names.
+  // If a color has its own "img" property, the photo swaps automatically when that color is picked
+  // (both on the card thumbnail and inside the detail popup).
   const PRODUCTS = [
     {
       id:'lueur', tag:'Wrap top', name:'Lueur', price:'From 320 MAD',
@@ -339,18 +338,33 @@
       img: 'pink top.png'  // 👈 upload your image with this name
     },
     {
-      id:'shadow', tag:'Peplum top', name:'Aube', price:'From 299 MAD',
-      desc:'Soft black, fitted through the waist, flowing into a peplum hem. Pairs easily with wide pants or a long skirt. A gentle, sunlit piece.',
-      sizes:['S','M','L','XL'],
-      colors:[ {name:'Soft Yellow', hex:'#E9D98A'}, {name:'Cream', hex:'#F3ECDD'}, {name:'Dusty Rose', hex:'#DCC0B8'} ],
-      img: 'black shadow.png'   // 👈 upload your image with this name
-    },
-    {
-      id:'voile', tag:'Asymmetric top', name:'Voile', price:'From 350 MAD',
+      id:'voile', tag:'Asymmetric top', name:'Voile', price:'From 299 MAD',
       desc:'Clean lines, an asymmetric hem, a satin-soft finish. Dresses up easily, just as easy dressed down. A modern classic with subtle drape.',
       sizes:['S','M','L','XL'],
       colors:[ {name:'Cream', hex:'#F3ECDD'}, {name:'Sage', hex:'#8E9A7E'}, {name:'Black', hex:'#221E1A'} ],
       img: 'white silky.png'  // 👈 upload your image with this name
+    },
+    {
+      id:'soir', tag:'Mandarin-collar top', name:'Soir', price:'From 220 MAD',
+      desc:'Structured mandarin collar, asymmetric knot-button placket, flared sleeves and a soft chiffon-lined hem. Tailored, a little dramatic, easy to dress up or down.',
+      sizes:['S','M','L','XL'],
+      colors:[
+        {name:'White', hex:'#FAF7F1', img:'mandarin-white.jpg'},
+        {name:'Burgundy', hex:'#5E1A22', img:'mandarin-red.jpg'},
+        {name:'Black', hex:'#1A1714', img:'mandarin-black.jpg'}
+      ],
+      img: 'mandarin-black.jpg' // default / card thumbnail
+    },
+    {
+      id:'haalo', tag:'Duster coat', name:'Haalo', price:'From 250 MAD',
+      desc:'Long line duster with a mock-neck collar, drawstring waist tie and a flowing front slit revealing wide trousers beneath. Worn open or cinched — an effortless layering piece.',
+      sizes:['S','M','L','XL'],
+      colors:[
+        {name:'Cream', hex:'#E7DFCB', img:'duster-cream.jpg'},
+        {name:'Earth Brown', hex:'#3E2723', img:'duster-brown.jpg'},
+        {name:'Olive', hex:'#6B6F4C', img:'duster-olive.jpg'}
+      ],
+      img: 'duster-cream.jpg' // default / card thumbnail
     }
   ];
 
@@ -398,6 +412,21 @@
   const detailImgTag = document.getElementById('detailImgTag');
   const detailImgLabel = document.getElementById('detailImgLabel');
 
+  function setDetailImage(src) {
+    if (src) {
+      detailImgTag.src = src;
+      detailImgTag.style.display = 'block';
+      detailImgLabel.style.display = 'none';
+      detailImgTag.onerror = () => {
+        detailImgTag.style.display = 'none';
+        detailImgLabel.style.display = 'block';
+      };
+    } else {
+      detailImgTag.style.display = 'none';
+      detailImgLabel.style.display = 'block';
+    }
+  }
+
   function openDetail(id) {
     currentProduct = PRODUCTS.find(p => p.id === id);
     chosenSize = null; chosenColor = null;
@@ -409,15 +438,8 @@
     detailMeta.textContent = 'Choose a size and color to reserve';
     detailMeta.style.color = '#7C8468';
 
-    // Update image
-    if (currentProduct.img) {
-      detailImgTag.src = currentProduct.img;
-      detailImgTag.style.display = 'block';
-      detailImgLabel.style.display = 'none';
-    } else {
-      detailImgTag.style.display = 'none';
-      detailImgLabel.style.display = 'block';
-    }
+    // Default image (card thumbnail / first color)
+    setDetailImage(currentProduct.img);
 
     sizeRow.innerHTML = '';
     currentProduct.sizes.forEach(s => {
@@ -445,6 +467,8 @@
         pickedColor.textContent = c.name;
         [...colorRow.querySelectorAll('.color-swatch')].forEach(s => s.classList.remove('active'));
         el.classList.add('active');
+        // Swap the photo to match the chosen color, if that color has its own image
+        if (c.img) setDetailImage(c.img);
         updateMeta();
       });
       colorRow.appendChild(el);
